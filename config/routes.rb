@@ -166,6 +166,8 @@ ActionController::Routing::Routes.draw do |map|
     pages.resource :title,      :only => [:edit, :update], :controller => 'title'
     pages.resource :trash,      :only => [:edit, :update], :controller => 'trash'
   end
+  # DEMO for etherpad integration
+  map.connect '/pages/pad/show/demo', { :controller => 'pad_demo', :action => 'show', :page_id => 'demo' }
 
   # page subclasses, gets triggered for any controller class Pages::XxxController
   map.connect '/pages/:controller/:action/:page_id', :constraints => {:controller => /.*_page/ }

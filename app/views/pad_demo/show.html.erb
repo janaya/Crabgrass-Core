@@ -1,0 +1,8 @@
+<h1><%= @pad.name %></h1>
+<video width="320" height="240" controls>
+  <source src="http://player.uncensoredinterview.com/e/11222.ogv"  type='video/ogg; codecs="theora, vorbis"'>
+</video>
+</br>Watch it <a href="./video/">full size</a>
+</br>Or <a href="http://player.uncensoredinterview.com/e/11222.ogv">download it</a>
+
+<iframe src="http://crabgrass.cairo.philosophyoftheweb.net:9001/p/<%= @pad.name %>?showChat=false&userName=<%= h current_user.name %>" width="100%" height="400"></iframe>
