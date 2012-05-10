@@ -1,0 +1,35 @@
+
+* EtherpadLite Support for Crabgrass
+** Installation
+*** Install etherpad-lite
+
+Install =etherpad-lite=, and set the following in =etherpad-lite/settings.json=:
+
+:  "requireSession": true,
+:  "editOnly": true,
+
+The first line will prevent access to the existing pads outside of Crabgrass.
+The second line will prevent creation of new pads from the Etherpad interface.
+
+Copy the API key from =etherpad-lite/APIKEY.txt=.
+
+*** Install the etherpad-lite ruby gem
+
+:  gem install etherpad-lite
+
+*** Set the API key in Crabgrass
+
+In Crabgrass, edit =config/initializers/etherpad-lite.rb= to match the API key.
+
+** TODO
+
+  - page title should not be editable, or the pad should be recreated with the right contents
+  - tests are missing!
+  - some edge cases with etherpad-lite not loading the pad (etherpad-lite issue)
+  - some page functionalities should be disabled?
+  - without the sessionID cookie, one cannot access the pad: if the session entry exists, 
+    but not the cookie, it should be created.
+  - destroying the page should remove the pad
+  - for a static view, contents should be fetched from @page.pad.text
+    -> maybe =@page.data= would cache the latest revision when a static view is requested
+  - Editing the page title should rename the pad (but that would break the URL)
