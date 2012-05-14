@@ -70,5 +70,6 @@ available_page_types:
   - MessagePage
   - RankedVotePage
   - Gallery
+  - PadPage
   - WikiPage
 

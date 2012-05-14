@@ -319,6 +319,9 @@ en:
   ##!  article_page_description: "Create a blog post or news article."
   ##!  article_page_display: "Article"
 
+  pad_page_description: "Create a collaborative editor for a group."
+  pad_page_display: "Pad"
+
   wiki_page_description: "Create an editable free-form text document."
   wiki_page_display: "Wiki Page"
   ##!  wiki: "Wiki"

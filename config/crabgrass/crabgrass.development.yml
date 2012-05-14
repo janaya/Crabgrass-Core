@@ -28,6 +28,7 @@ text_editor: greencloth_only
 available_page_types:
   - AssetPage
   - DiscussionPage
+  - PadPage
   - WikiPage
 #  - EventPage #removing for mvs https://labs.riseup.net/code/issues/3349
   - RateManyPage
