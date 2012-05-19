@@ -10,6 +10,7 @@
 # It's strongly recommended to check this file into your version control system.
 
 ActiveRecord::Schema.define(:version => 20120526071659) do
+ActiveRecord::Schema.define(:version => 20120517105001) do
 
   create_table "activities", :force => true do |t|
     t.integer  "subject_id"
