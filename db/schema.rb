@@ -9,7 +9,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120504064620) do
+ActiveRecord::Schema.define(:version => 20120517105001) do
 
   create_table "activities", :force => true do |t|
     t.integer  "subject_id"
@@ -393,6 +393,18 @@ ActiveRecord::Schema.define(:version => 20120504064620) do
   end
 
   add_index "notices", ["user_id"], :name => "index_notices_on_user_id"
+
+  create_table "pads", :force => true do |t|
+    t.string   "name"
+    t.string   "url"
+    t.text     "text"
+    t.integer  "revision",   :default => 0
+    t.integer  "page_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "pads", ["page_id"], :name => "index_pads_on_page_id", :unique => true
 
   create_table "page_histories", :force => true do |t|
     t.integer  "user_id"
