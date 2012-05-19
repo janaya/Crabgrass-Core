@@ -1,42 +1,40 @@
 class PadPageController < Pages::BaseController
-  
+
+  permissions :pages
   guard_like 'page'
 
-  before_filter :load_ep_session, :only => [:show, :print]
+  before_filter :login_required
+  before_filter :refresh_epl_session, :only => [:show, :print]
   
   ##
   ## PROTECTED
   ##
   protected
 
-  def load_ep_session
+  def refresh_epl_session
     session[:ep_sessions] ||= {}
-
-    # Set author to the current user
-    author = @page.ep.author(current_user.id, { :name => current_user.name })
-    # Get or create a session for this Author in this Group
-    if session[:ep_sessions][@page.ep_group.id]
-      sess = @page.ep.get_session(session[:ep_sessions][@page.ep_group.id])
-    else
-      sess = @page.ep_group.create_session(author, PadPage::ETHERPAD_SESSION_LENGTH)
-    end
-    if sess.expired?
-      sess.delete
-      sess = @page.ep_group.create_session(author, PadPage::ETHERPAD_SESSION_LENGTH)
-    end
-    session[:ep_sessions][@page.ep_group.id] = sess.id
-
-    save_ep_session_cookie(sess)
+    sess = EPL.update_session!(@page, session)
+    save_ep_session_cookie(sess.id)
+  rescue Errno::ECONNREFUSED
+    error("Connection to Etherpad-Lite failed: service unavailable.", :now)
+  rescue Exception => e
+    info "NO ETHERPAD SESSION! #{e.class}: #{e.message}" # should deny permission?
   end
 
   # Set the EtherpadLite session cookie.
   # This will automatically be picked up by the jQuery plugin's iframe.
-  def save_ep_session_cookie(sess)
+  def save_ep_session_cookie(sess_id)
     cookies[:sessionID] = {
-      :value    => sess.id,
+      :value    => sess_id,
       :domain   => request.host,
       :path     => '/',
-      :expires  => Time.now + 60 * PadPage::ETHERPAD_SESSION_LENGTH
+      :expires  => Time.now + 60 * EPL::ETHERPAD_SESSION_DURATION
     }
   end
+
+  # :nodoc: load the correct page Class
+  def page_type
+    PadPage
+  end
+
 end
