@@ -20,3 +20,30 @@ Rake::RDocTask.new(:rdoc) do |rdoc|
   rdoc.rdoc_files.include('README')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
+
+namespace :etherpad do
+  desc "Get or set the Etherpad-Lite API key"
+  task :api_key do
+    api_key_file = File.expand_path('../../../../config/etherpad-api-key.txt', __FILE__)
+    api_location = ENV['API_KEY']
+    
+    if api_location.nil?
+      # Return existing key if set.
+      if File.readable? api_key_file
+        puts "ETHERPAD_API_KEY = " + IO.read(api_key_file)
+      else
+        puts "ETHERPAD_API_KEY not set. Run: rake etherpad:api_key API_KEY=string_or_file"
+      end
+    else
+      # Set the API key
+      if File.readable?(api_location)
+        api_key = IO.read(api_location)
+      else
+        api_key = api_location.to_s
+      end
+      raise(ArgumentError, "Missing API Key!") if api_key.empty?
+      File.open(api_key_file, 'w+') { |f| f.puts(api_key) }
+      puts "Set ETHERPAD_API_KEY to #{api_key}"
+    end
+  end
+end
