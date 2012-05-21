@@ -9,6 +9,7 @@ tmp/*
 :2e_*
 config/sphinx/*.sphinx.conf
 config/crabgrass/secret.txt
+config/etherpad-api-key.txt
 doc/api
 doc/app
 doc/coverage
