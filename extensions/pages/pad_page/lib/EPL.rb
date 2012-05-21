@@ -140,7 +140,7 @@ class EPL
   # Connect to local Etherpad-Lite service
   # @return (Object) EtherpadLite.instance
   def connect!
-    EtherpadLite.connect(:local, ETHERPAD_API_KEY)
+    EtherpadLite.connect(:local, ETHERPAD_API_KEY.chomp)
   end
 
 end
