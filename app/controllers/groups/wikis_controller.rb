@@ -1,14 +1,9 @@
 class Groups::WikisController < Groups::BaseController
 
-  include_controllers 'common/wiki'
+  guard :may_edit_group?
 
-  before_filter :fetch_wiki, :only => :show
-  # show might be allowed when not logged in
-  before_filter :login_required, :except => :show
-  before_filter :authorized?, :only => :show
-
-  helper 'wikis/base', 'wikis/sections'
-  permissions 'wikis'
+  permission_helper 'wikis'
+  helper 'wikis/base'
 
   def new
     if @wiki = @profile.wiki
@@ -41,8 +36,9 @@ class Groups::WikisController < Groups::BaseController
 
   protected
 
-  # @group is fetched in Groups::BaseController
-  def fetch_context
+  def fetch_group
+    # @group is fetched in Groups::BaseController
+    super
     @profile = fetch_private? ?
       @group.profiles.private :
       @group.profiles.public

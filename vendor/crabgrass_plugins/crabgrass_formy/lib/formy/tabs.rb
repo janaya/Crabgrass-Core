@@ -3,7 +3,6 @@ module Formy
   class Tabs < Root
     #
     # options:
-    #   :type -- one of 'simple', 'top', nil
     #   :class -- class to add to the ul
     #   :id    -- id to add to the ul
     #
@@ -42,34 +41,64 @@ module Formy
         :style, :class, :hash, :default
 
       def close
-        selected = 'active' if @selected
-        @class = [@class, 'tab', selected, ("small_icon #{@icon}_16" if @icon)].compact.join(' ')
-        if @link
-          a_tag = @link
-        elsif @url
-          a_tag = content_tag :a, @label, :href => @url, :class => @class, :style => @style, :id => @id, :onclick => @function
-        elsif @show_tab
-          if @show_tab =~ /_panel$/
-            @hash ||= @show_tab.sub(/_panel$/, '').gsub('_','-')
-            onclick = "showTab(this, $('%s'), '%s');" % [@show_tab, @hash]
-            @id = @show_tab.sub(/_panel$/, '_link')
-          else
-            onclick = "showTab(this, $('%s'));" % @show_tab
-          end
-          if @function
-            @function += ';' unless @function[-1].chr == ';'
-            onclick = @function + onclick
-          end
-          a_tag = content_tag :a, @label, :onclick => onclick, :class => @class, :style => @style, :id => @id
-          if @default
-            puts javascript_tag('defaultHash = "%s"' % @hash)
-          end
-        elsif @function
-          a_tag = content_tag :a, @label, :href => '#', :class => @class, :style => @style, :id => @id, :onclick => @function
-        end
-        li_class = "tab #{@options[:index] == 0 ? 'first' : ''}"
-        puts content_tag(:li, a_tag, :class => li_class)
+        put_item
         super
+      end
+
+      protected
+
+      def put_item
+        selected = 'active' if @selected
+        first = 'first' if @options[:index] == 0
+        li_class = [selected, first].compact.join(' ')
+        puts content_tag(:li, build_link, :class => li_class)
+      end
+
+      def build_link
+        return @link if @link
+        return content_tag(:a, @label, link_options) + postfix_for_link
+      end
+
+      def link_options
+        @class = [@class, ("icon #{@icon}_16" if @icon)].compact.join(' ')
+        if @show_tab =~ /_panel$/
+           @id = @show_tab.sub(/_panel$/, '_link')
+        end
+        options = {
+            :class => @class,
+            :style => @style,
+            :id => @id,
+            :onclick => @function
+        }
+
+        if @url
+          options[:href] = @url
+        elsif @show_tab
+          options[:onclick] = onclick_for_show_tab
+        elsif @function
+          options[:href] = "#"
+        end
+        return options
+      end
+
+      def onclick_for_show_tab
+        if @show_tab =~ /_panel$/
+          @hash ||= @show_tab.sub(/_panel$/, '').gsub('_','-')
+          onclick = "showTab(this, $('%s'), '%s');" % [@show_tab, @hash]
+        else
+          onclick = "showTab(this, $('%s'));" % @show_tab
+        end
+        if @function
+          @function += ';' unless @function[-1].chr == ';'
+          onclick = @function + onclick
+        end
+        return onclick
+      end
+
+      def postfix_for_link
+        @show_tab && @default ?
+          javascript_tag('defaultHash = "%s"' % @hash) :
+          ""
       end
     end
 
@@ -82,35 +111,25 @@ module Formy
 
     def open
       super
-      tab_type = @options[:type].to_s
-      if tab_type == 'simple'
-        puts "<ul class=' #{@options[:class]}'>"
-      elsif tab_type == 'top'
-        puts "<div style='height:1%'>" # this is to force hasLayout in ie
-        puts "<ul class='tabset top #{@options[:class]}'>"
-      else
-        puts "<ul class='tab #{@options[:class]}' id='#{@options[:id]}'>"
-      end
+      open_group
     end
 
     def close
-      tab_type = @options[:type].to_s
-      if tab_type == 'simple'
-        if @options[:separator].any?
-          raw_puts @elements.join("<li> #{options[:separator]} </li>")
-        else
-          raw_puts @elements.join
-        end
-        puts "</ul>"
-      elsif tab_type == 'top'
-        @elements.each {|e| raw_puts e}
-        puts "<li></li></ul>"
-        puts "</div>"
-      else
-        @elements.each {|e| raw_puts e}
-        puts "</ul>"
-      end
+      close_group
       super
+    end
+
+    protected
+
+    def open_group
+      puts "<div style='height:1%'>" # this is to force hasLayout in ie
+      puts "<ul class='nav nav-tabs #{@options[:class]}'>"
+    end
+
+    def close_group
+      @elements.each {|e| raw_puts e}
+      puts "<li></li></ul>"
+      puts "</div>"
     end
 
   end

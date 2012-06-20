@@ -1,15 +1,17 @@
 class Groups::DirectoryController < ApplicationController
+  skip_before_filter :login_required
+
   stylesheet 'directory'
   helper 'groups/directory'
-  permissions 'groups/structures'
+  permission_helper 'groups/structures'
 
   def index
     if !logged_in?
-      @groups = Group.access_by(:public).allows(:view).groups_and_networks.paginate(pagination_params)
+      @groups = Group.with_access(:public => :view).groups_and_networks.paginate(pagination_params)
     elsif my_groups?
       @groups = current_user.primary_groups_and_networks.paginate(pagination_params)
     else
-      @groups = Group.access_by(current_user).allows(:view).groups_and_networks.paginate(pagination_params)
+      @groups = Group.with_access(current_user => :view).groups_and_networks.paginate(pagination_params)
     end
   end
 

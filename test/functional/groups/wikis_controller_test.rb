@@ -10,7 +10,7 @@ class Groups::WikisControllerTest < ActionController::TestCase
 
   def test_new
     login_as @user
-    assert_permission :may_create_group_wiki? do
+    assert_permission :may_edit_group? do
       xhr :get, :new, :group_id => @group.to_param
     end
     assert_response :success
@@ -54,7 +54,7 @@ class Groups::WikisControllerTest < ActionController::TestCase
 
   def test_create_private
     login_as @user
-    assert_permission :may_create_group_wiki? do
+    assert_permission :may_edit_group? do
       xhr :post, :create,
         :group_id => @group.to_param,
         :wiki => { :body => "_created_", :private => true }
@@ -69,7 +69,7 @@ class Groups::WikisControllerTest < ActionController::TestCase
 
   def test_create_public
     login_as @user
-    assert_permission :may_create_group_wiki? do
+    assert_permission :may_edit_group? do
       xhr :post, :create,
         :group_id => @group.to_param,
         :wiki => { :body => "_created_", :private => false }
@@ -94,32 +94,6 @@ class Groups::WikisControllerTest < ActionController::TestCase
     assert wiki.profile.public?
     assert_response :redirect
     assert_redirected_to group_url(@group)
-  end
-
-  def test_show_private
-    @wiki = @group.profiles.private.create_wiki :body => 'init'
-    login_as @user
-    assert_permission :may_show_group_wiki? do
-      xhr :get, :show, :group_id => @group.to_param, :id => @wiki.id
-    end
-    assert_response :success
-    assert_equal @wiki, assigns['wiki']
-  end
-
-  def test_show_to_stranger
-    @wiki = @group.profiles.public.create_wiki :body => 'init'
-    assert_permission :may_show_group_wiki? do
-      xhr :get, :show, :group_id => @group.to_param, :id => @wiki.id
-    end
-    assert_response :success
-    assert_equal @wiki, assigns['wiki']
-  end
-
-  def test_do_not_show_private_to_stranger
-    @priv = @group.profiles.private.create_wiki :body => 'private'
-    assert_permission(:may_show_group_wiki?, false) do
-      xhr :get, :show, :group_id => @group.to_param, :id => @priv.id
-    end
   end
 
 end

@@ -5,13 +5,13 @@ class Groups::SettingsControllerTest < ActionController::TestCase
   def setup
     @user = User.make
     @group = Group.make
-    @group.grant! :public, :view
+    @group.grant_access! :public => :view
     @group.add_user!(@user)
   end
 
   def test_logged_in
     login_as @user
-    assert_permission :may_show_group_settings? do
+    assert_permission :may_admin_group? do
       get :show, :group_id => @group.to_param
     end
     assert_response :success
@@ -26,7 +26,7 @@ class Groups::SettingsControllerTest < ActionController::TestCase
   def test_not_a_member
     stranger = User.make
     login_as stranger
-    assert_permission :may_show_group_settings?, false do
+    assert_permission :may_admin_group?, false do
       get :show, :group_id => @group.to_param
     end
     assert_select '.inline_message_list'
@@ -34,7 +34,7 @@ class Groups::SettingsControllerTest < ActionController::TestCase
 
   def test_member_can_see_private
     login_as @user
-    @group.revoke! :public, :all
+    @group.revoke_access! :public => :all
     get :show, :group_id => @group.to_param
     assert_response :success
     assert_select '.inline_message_list', 0
@@ -42,7 +42,7 @@ class Groups::SettingsControllerTest < ActionController::TestCase
 
   def test_update
     login_as @user
-    assert_permission :may_edit_group_settings? do
+    assert_permission :may_admin_group? do
       post :update, :group => {:full_name => 'full name'}, :group_id => @group.to_param
     end
     assert_response 302

@@ -1,15 +1,36 @@
+=begin
+
+ WikiController
+
+ This is the controller for the in-place wiki editor, not for the
+ the wiki page type (wiki_page_controller.rb).
+
+=end
+
 class Wikis::WikisController < Wikis::BaseController
 
-  permissions :wikis
-  before_filter :login_required, :except => :show
+  skip_before_filter :login_required, :only => :show
+  before_filter :authorized?, :only => :show
 
-  javascript :wiki
+  guard :show => :may_show_wiki?
+
+  helper 'wikis/sections'
+  javascript 'upload', :only => :edit
   stylesheet 'wiki_edit'
+  stylesheet 'upload', :only => :edit
 
   layout proc{ |c| c.request.xhr? ? false : 'sidecolumn' }
 
-  guard :edit => :may_edit_wiki?,
-        :update => :may_edit_wiki?
+  def show
+    render :template => '/common/wiki/show',
+      :locals => {:preview => params['preview']}
+  end
+
+  def print
+    @posts = @page.posts if @page
+    render :template => 'common/wiki/show',
+      :layout => "printer_friendly"
+  end
 
   def edit
     if params[:break_lock]
