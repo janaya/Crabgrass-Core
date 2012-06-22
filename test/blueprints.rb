@@ -164,6 +164,8 @@ def make_an_asset
   caption
   version       { 1 }
   parent_page   { AssetPage.make }
+  data          { Sham.login }
+  filename      { Sham.caption }
 end
 
 Asset.blueprint do
