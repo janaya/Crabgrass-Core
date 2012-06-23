@@ -419,4 +419,12 @@ class Asset < ActiveRecord::Base
 
   acts_as_extensible
 
+  ## TAGGING
+  acts_as_taggable_on :tags
+
+  # needed?
+  #def tags_will_change!
+  #  @tags_changed = true
+  #end
+
 end
