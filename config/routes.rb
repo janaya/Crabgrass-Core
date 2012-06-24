@@ -25,13 +25,21 @@ ActionController::Routing::Routes.draw do |map|
   ## STATIC FILES AND ASSETS
   ##
 
+  #julia
+  # FIXME this should be a nested resource but assets are not a resource yet.
+  map.with_options(:controller => 'assets/tags') do |asset_tags|
+    asset_tags.asset_tags 'assets/:asset_id/tags', :action => :index, :conditions => { :method => :get }
+    asset_tags.create_asset_tags 'assets/:asset_id/tags', :action => :create, :conditions => { :method => :post }
+    asset_tags.destroy_asset_tag 'assets/:asset_id/tags/:id', :action => :destroy, :conditions => { :method => :delete }
+ end
+  
   map.with_options(:controller => 'assets') do |assets|
     assets.create_asset '/assets/create/:id', :action => :create
     assets.destroy_asset '/assets/destroy/:id', :action => :destroy
     assets.asset_version '/assets/:id/versions/:version/*path', :action => 'show'
     assets.asset '/assets/:id/*path', :action => 'show'
   end
-
+  
   map.avatar 'avatars/:id/:size.jpg', :controller => 'avatars', :action => 'show'
   map.connect 'theme/:name/*file.css', :controller => 'theme', :action => 'show'
   map.pictures 'pictures/:id1/:id2/:geometry.:format', :controller => 'pictures', :action => 'show'
