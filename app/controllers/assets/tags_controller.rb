@@ -17,14 +17,16 @@ class Assets::TagsController < ApplicationController
     @asset.tag_list.add(params[:add], :parse => true)
     @page.updated_by = current_user
     @asset.save!
-    render :nothing => true
+    success "Tags created", :now
+    render :template => 'assets/tags/reset'
   end
 
   def destroy
-    @asset.tag_list.remove(params[:id])
+    @asset.tags.destroy(params[:id])
     @page.updated_by = current_user
     @asset.save!
-    render :nothing => true
+    success "Tag removed", :now, :quick
+    render :template => 'assets/tags/reset'
   end
 
   protected

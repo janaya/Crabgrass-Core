@@ -5,3 +5,11 @@
   = render :partial => 'show_image'
 
 %span= gallery_display_image_position
+  
+- if @image.tags.any? || may_edit_page?
+  %h3= I18n.t(:tags)
+  %div#image_tags.tags
+    = @image.tags.to_sentence
+  %ul
+    = link_to_modal "edit", :url => asset_tags_path(@image)
+

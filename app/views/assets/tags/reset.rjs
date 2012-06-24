@@ -1,0 +1,3 @@
+page.call 'Modalbox.hide' unless request.delete?
+page.replace 'image_tags', :partial => 'assets/tags/tag_list'
+update_alert_messages(page)
