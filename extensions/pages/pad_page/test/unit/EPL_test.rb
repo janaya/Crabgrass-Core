@@ -32,28 +32,6 @@ end
 
 class EplTest < Test::Unit::TestCase
 
-  def test_adding_pad_to_page
-    page = PadPage.new
-    page.stubs :new_record? => false, :owner_id => 43, :title => 'pad pages title'
-    User.stubs :current => stub( :id => 3, :name => 'my-users-name')
-    EtherpadLite.expects(:connect).with(:local, ETHERPAD_API_KEY).returns(ep_instance = stub)
-    ep_instance.expects(:author).with(User.current.id, {:name => User.current.name}).returns(ep_author = stub)
-#    ep_instance.expects(:group).with("Group_43").returns(ep_group = stub)
-    ep_instance.expects(:group).with(43).returns(ep_group = stub)
-    ep_group.expects(:pad).returns(ep_pad = stub(:id => "pad id", :text => "pad text", :revision_numbers => [1,2,3]))
-    page.expects(:save!)
-    EPL.sync!(page)
-    assert page.data
-    assert page.data.name = "pad id"
-    assert page.data.text = "pad text"
-  end
-
-  def test_new_pad
-    container = stub(:group_mapping => 'Group_123', :pad_id => 'abcdef')
-    Pad.expects(:new).with(:container => container).returns(ep_instance = stub)
-    container.expects(:new_record?).returns(true)
-  end
-
   def test_syncing_new_pad
     container = stub :group_mapping => "a-fine-group", :pad_id => "pad_id_yeah", :new_record? => true
     user = stub :id => 123, :name => "user-name"
