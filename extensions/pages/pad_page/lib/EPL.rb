@@ -30,7 +30,7 @@ class EPL
     # @param [Model] the current user instance.
     #                It may respond to :id, and :name
     def sync!(container, current_user = nil)
-      self.new(container, current_user).pad
+      self.new(container, current_user).pad #.sync!
     end
     #
     # Update Etherpad-Lite session for current_user.
@@ -78,13 +78,6 @@ class EPL
     ep_session
   end
 
-  ## Synchronize EPL DB to app DB
-
-  def sync!
-    return false unless @container.new_record? || pad_revised?
-    @container.update_attributes(:text => pad.text, :revision => pad.revision_numbers.last)
-  end
-
   protected
 
   # @return (Boolean) true if CG version is older, false otherwise
@@ -119,13 +112,6 @@ class EPL
   # @return (Object) the Etherpad-Lite Group instance
   def group
     @group ||= ep.group(@container.group_mapping)
-  end
-
-  # Get group id in EPL DB
-  #
-  # @return (String) the Etherpad-Lite GroupID
-  def group_id
-    group.id
   end
 
   private
