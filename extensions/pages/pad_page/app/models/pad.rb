@@ -30,12 +30,17 @@ class Pad < ActiveRecord::Base
   protected
 
   def sync
-    synced = EPL.sync!(self, User.current)
-    self.name     = synced.id
-    self.text     = synced.text
-    self.revision = synced.revision_numbers.last 
+    ep = EPL.new(self, User.current)
+    self.name     = ep.pad.id
+    self.text     = ep.pad.text
+    self.revision = ep.pad.revision_numbers.last 
   end
   alias_method :create_on_etherpad, :sync
+
+  def update_session(old_sessions)
+    ep = EPL.new(self, User.current)
+    ep.update_session!(old_sessions[self.name])
+  end
 
 end
 

@@ -10,8 +10,10 @@ class PadPageController < Pages::BaseController
   protected
 
   def refresh_epl_session
+    @pad = @page.pad
     session[:ep_sessions] ||= {}
-    sess = EPL.update_session!(@page, session)
+    sess = @pad.update_session(session[:ep_sessions])
+    session[:ep_sessions][@pad.name] = sess.id 
     save_ep_session_cookie(sess.id)
   rescue Errno::ECONNREFUSED
     error("Connection to Etherpad-Lite failed: service unavailable.", :now)

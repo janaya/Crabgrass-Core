@@ -12,7 +12,13 @@
 class EPL
 
   ETHERPAD_SESSION_DURATION = 60 # minutes
-  
+
+  # Constructor for the Etherpad Lite Instance  
+  # 
+  # @param [Model] the pad container to synchronize with Etherpad-Lite's pad.
+  #                It must respond to :group_mapping, and :pad_id.
+  # @param [Model] the current user instance.
+  #                It may respond to :id, and :name
   def initialize(container, current_user = nil)
     @container = container
     @ep        = connect!
@@ -21,36 +27,15 @@ class EPL
     create_pad! if @container.new_record?
   end
 
-  class << self
-    #
-    # Update app record to latest pad's version.
-    # 
-    # @param [Model] the pad container to synchronize with Etherpad-Lite's pad.
-    #                It must respond to :group_mapping, and :pad_id.
-    # @param [Model] the current user instance.
-    #                It may respond to :id, and :name
-    def sync!(container, current_user = nil)
-      self.new(container, current_user).pad #.sync!
-    end
-    #
-    # Update Etherpad-Lite session for current_user.
-    #
-    # @param  [Model]   the current pad container instance
-    # @param  [Object]  the current user Session object
-    # @return [Object]  the updated Etherpad-Lite session object for that user
-    def update_session!(container, session, current_user = nil)
-      self.new(container, current_user).update_session!(session)
-    end
-  end
-
-  ## instance variable
+  def pad
+    @pad ||= group.get_pad(@container.pad_id) # unless @container.new_record?
+  end 
 
   def container
     @container
   end
 
   ## Etherpad-Lite objects
-
   def author
     @author
   end
@@ -59,23 +44,16 @@ class EPL
     @ep
   end
   
-  def pad
-    @pad ||= group.get_pad(@container.pad_id) # unless @container.new_record?
-  end
-
   ## Session management
 
-  def update_session!(session)
+  #
+  # Update Etherpad-Lite session.
+  #
+  # @param  [Object]  the current session id if available
+  # @return [Object]  the updated Etherpad-Lite session object for that user
+  def update_session!(session_id)
     return false if @container.new_record?
-    session[:ep_sessions] ||= {}
-    if session[:ep_sessions][pad.id]
-      ep_session = ep.get_session(session[:ep_sessions][pad.id])
-    else
-      ep_session = group.create_session(author, ETHERPAD_SESSION_DURATION)
-    end
-    ep_session = keep_session_alive!(ep_session)
-    session[:ep_sessions][pad.id] = ep_session.id
-    ep_session
+    keep_session_alive!(ep_session(session_id))
   end
 
   protected
@@ -93,6 +71,15 @@ class EPL
       id, name = current_user.id, current_user.name
     end
     ep.author(id, { :name => name }) 
+  end
+
+  # get ep_session either by specified id or by group and author.
+  def ep_session(session_id)
+    if session_id
+      ep.get_session(session_id)
+    else
+      group.create_session(author, ETHERPAD_SESSION_DURATION)
+    end
   end
 
   # Prolong Etherpad-Lite session for current_user

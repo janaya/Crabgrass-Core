@@ -1,7 +1,6 @@
 require 'rubygems'
 require 'test/unit'
 require 'mocha'
-require 'digest/sha1'
 require File.dirname(__FILE__) + '/../../lib/EPL'
 
 ETHERPAD_API_KEY = "the api key"
@@ -9,48 +8,42 @@ ETHERPAD_API_KEY = "the api key"
 class EtherpadLite
 end
 
-class User
-end
-
-class PadPage
-  attr_accessor :data
-  def ep_pad_id
-    data.name.split('$').last
-  end
-end
-
-class Pad
-  def initialize(args)
-  end
-  attr_accessor :text, :name, :revision
-  def update_attributes(attrs)
-    attrs.each do |key, value|
-      self.send(key.to_s + '=', value)
-    end
-  end
-end
-
 class EplTest < Test::Unit::TestCase
 
-  def test_syncing_new_pad
+  def setup
+    @container = stub :group_mapping => "a-fine-group", :pad_id => "pad_id_yeah"
+    @user = stub :id => 123, :name => "user-name"
+    @ep_pad = stub :id => "pad id"
+    @ep_group = stub :pad => @ep_pad
+    @ep_author = stub
+    @ep_instance = stub :author => @ep_author, :group => @ep_group
+  end
+
+  def test_initialization
     container = stub :group_mapping => "a-fine-group", :pad_id => "pad_id_yeah", :new_record? => true
     user = stub :id => 123, :name => "user-name"
     EtherpadLite.expects(:connect).with(:local, ETHERPAD_API_KEY).returns(ep_instance = stub)
     ep_instance.expects(:author).with(user.id, {:name => user.name}).returns(ep_author = stub)
-#    ep_instance.expects(:group).with("Group_43").returns(ep_group = stub)
     ep_instance.expects(:group).with(container.group_mapping).returns(ep_group = stub)
     ep_group.expects(:pad).returns(ep_pad = stub(:id => "pad id"))
-    synced = EPL.sync!(container, user)
-    assert_equal ep_pad, synced
+    ep = EPL.new(container, user)
+    assert_equal ep_pad, ep.pad
   end
-    
 
+  def test_no_session_for_a_new_record
+    EtherpadLite.expects(:connect).returns(@ep_instance)
+    @container.expects(:new_record?).returns(true).at_least_once
+    ep = EPL.new(@container, @user)
+    assert !ep.update_session!(nil)
+  end
 
-  # Generic: Pad is instanciated with its container.
-  # Pad.respond_to? :group_mapping, which is defined per application.
-  # In cg case, it's Page#owner_name
-  # Pad.respond_to= :pad_name, which is defined per application and unique per group_mapping
-  # In cg case it's Pagename
-#   pad = Pad.create(page)
+  def test_update_session
+    EtherpadLite.expects(:connect).returns(@ep_instance)
+    @container.expects(:new_record?).returns(false).at_least_once
+    ep = EPL.new(@container, @user)
+    session = stub :expired? => false
+    @ep_group.expects(:create_session).with(@ep_author, EPL::ETHERPAD_SESSION_DURATION).returns(session)
+    assert_equal session, ep.update_session!(nil)
+  end
 
 end
