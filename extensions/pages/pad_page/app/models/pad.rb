@@ -11,7 +11,9 @@
 class Pad < ActiveRecord::Base
   has_one :page, :as => :data
 
-  attr_accessor :group_mapping, :pad_name
+  # these are used during creation when name has not been set
+  attr_accessor :group_mapping
+  attr_writer :pad_id
   validates_presence_of :name
   
   before_validation :create_pad_on_etherpad
@@ -23,7 +25,11 @@ class Pad < ActiveRecord::Base
   end
 
   def pad_id
-    self.name.nil? ? Digest::SHA1.hexdigest(self.pad_name) : self.name.split('$').last 
+    @pad_id ||= self.name.split('$').last 
+  end
+
+  def ep_group_id
+    self.name && self.name.split('$').first
   end
 
   def sync!
