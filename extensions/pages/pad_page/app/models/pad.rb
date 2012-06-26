@@ -9,18 +9,21 @@
 # end
 
 class Pad < ActiveRecord::Base
-  belongs_to :page
+  has_one :page, :as => :data
 
+  attr_accessor :group_mapping, :pad_name
   validates_presence_of :name
+  
+  before_validation :create_pad_on_etherpad
 
-  before_create :create_on_etherpad
-
-  def group_mapping
-    page.owner_name
+  def create_pad_on_etherpad
+    return if name
+    # this needs a page to work.
+    sync
   end
 
   def pad_id
-    self.name.nil? ? Digest::SHA1.hexdigest(page.name) : self.name.split('$').last 
+    self.name.nil? ? Digest::SHA1.hexdigest(self.pad_name) : self.name.split('$').last 
   end
 
   def sync!
@@ -35,7 +38,6 @@ class Pad < ActiveRecord::Base
     self.text     = ep.pad.text
     self.revision = ep.pad.revision_numbers.last 
   end
-  alias_method :create_on_etherpad, :sync
 
   def update_session(old_sessions)
     ep = EPL.new(self, User.current)
