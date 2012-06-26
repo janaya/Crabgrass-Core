@@ -10,6 +10,7 @@ class PadPageController < Pages::BaseController
   protected
 
   def refresh_epl_session
+    debugger
     @pad = @page.pad
     session[:ep_sessions] ||= {}
     sess = @pad.update_session(session[:ep_sessions])

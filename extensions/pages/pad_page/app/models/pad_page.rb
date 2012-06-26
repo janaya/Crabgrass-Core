@@ -17,7 +17,7 @@ class PadPage < Page
   def create_pad
     self.data = Pad.create do |pad|
       pad.group_mapping = self.owner_name
-      pad.pad_name = self.friendly_url
+      pad.pad_id = Digest::SHA1.hexdigest(self.friendly_url)
     end
   end
 end

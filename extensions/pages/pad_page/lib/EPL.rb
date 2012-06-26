@@ -98,6 +98,7 @@ class EPL
   #
   # @return (Object) the Etherpad-Lite Group instance
   def group
+    @group ||= ep.get_group(@container.ep_group_id) if @container.ep_group_id
     @group ||= ep.group(@container.group_mapping)
   end
 
