@@ -13,6 +13,11 @@ class PadPage < Page
   def ep_pad_id
     @ep_pad_id ||= ep_full_pad_name.split('$').last if pad.respond_to?(:name) && pad.name
   end
+
+  protected
+
+  # before_filter
+  # Create a pad instance with the appropriate mappings for etherpad-lite.
   
   def create_pad
     self.data = Pad.create do |pad|

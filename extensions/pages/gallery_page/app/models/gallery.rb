@@ -1,5 +1,7 @@
 class Gallery < Page
   include PageExtension::RssData
+  # here there should go the the mixin for the picture with tag
+  #include Crabgrass::Page::Padded
 
   # A gallery is a collection of images, being presented to the user by a cover
   # page, an overview or a slideshow.
