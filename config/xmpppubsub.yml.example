@@ -1,0 +1,15 @@
+:subscriber:
+  :host: example1.com
+  :port: 5222
+  :username: sub
+  :password: sub
+  :debug: true
+  :publishernode: home/example1.com/pubexample2/updates
+
+:publisher:
+  :host: example1.com
+  :port: 5222
+  :username: pub
+  :password: pub
+  :debug: true
+  :updatesnode: home/example1.com/pub/updates

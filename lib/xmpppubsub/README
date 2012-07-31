@@ -1,0 +1,259 @@
+Description
+=============
+
+This is a very simple and unsecure proof of concept for cg federation using XMPP PubSub [1].
+
+how the cg federation should work
+----------------------------------------
+
+The idea of this cg federation is to have a minimum of two cg servers, let's say cg.example1.com and cg.example2.com, each of them using an XMPP server, let's say example1.com and example2.com
+
+When a user A creates and account in cg, cg.example1.com creates the associated XMPP account in the XMPP server A@example1.com, and the associated user XMPP PubSub node "home/example1.com/A/updates".
+
+Every time the user A creates content in cg, for instance, publish a post, this post is also published in the associated XMPP PubSub node "home/example1.com/A/updates" as XML.
+
+A user B in cg.example2.com (with XMPP account B@example2.com) may subscribe to the user A in cg.example1.com. The user A should be able to accept the subscription, and in case it's accepted, the XMPP server example2.com will subscribe the account B@example2.com to the node "home/example1.com/A/updates" and every time the user A publish a post, B will receive the notification in cg.example2.com through the subscribed XMPP account B@example2.com.
+
+In the same way, the user A can subscribe to a user C in cg.example2.com. In this case, the account A@example1.com would subscribe to the node "home/example2.com/C/updates".
+
+This federation scheme has two complex parts. One is the permissions to access to the content, the other is how the PubSub items should be represented. It would not be enough to convert a cg object to its representation in XML, as the user and pages ids would differ in different cg servers. A more appropiate object represenation would be to use URLs instead of object ids.
+
+For instance, if a post object created by a user with id 1 in a discussion page with id 2 would be converted to XML, it would be published as the following item in XMPP PubSub:
+
+<code>
+ <item xmlns='http://jabber.org/protocol/pubsub'><post>
+  <body>aaa</body>
+  <body-html>&lt;p&gt;aaa&lt;/p&gt;</body-html>
+  <created-at type='datetime'>2012-07-31T09:50:06Z</created-at>
+  <deleted-at nil='true' type='datetime'/>
+  <discussion-id type='integer'>2</discussion-id>
+  <id type='integer'>2</id>
+  <page-terms-id type='integer'>1</page-terms-id>
+  <updated-at type='datetime'>2012-07-31T09:50:06Z</updated-at>
+  <user-id type='integer'>1</user-id>
+</post>
+</item>
+
+</code>
+
+Here, the discussion-id and user-id XML tags should contain the unique URLs instead of the database ids.
+
+[1] http://xmpp.org/extensions/xep-0060.html
+
+a simple federation proof of concept
+-------------------------------------
+
+To simplify the previous scenario, in this proof of concept there're only two users, a publisher (pub) and a subscriber (sub) account in the XMPP servers, instead of having a publisher and/or subscriber XMPP accounts for each cg user account.
+
+In this way, the XMPP account sub@example1.com would be subscribed to the node "home/example2.com/pub/updates" that belongs to pub@example2.com and the account sub@example2.com would be subscribed to the node "home/example1.com/pub/updates" that belongs to pub@example2.com.
+
+When a user A in cg.example1.com publish a post, cg would use the XMPP account pub@example1.com to publish the item to the node "home/example1.com/pub/updates" that would be received by sub@example2.com. The cg server cg.example2.com would receive this item and update its database using the same user id and page id. 
+Therefore, if the user A has id 1 in the database, and the post belongs to the discussion page with id 2 in cg.example1.com, it would appear in cg.example2.com in a discussion page with the same id and published by a user in cg.example2.com with id 1. 
+This is the reason why for this scenario cg.example1.com and cg.example2.com should have the same users and pages ids.
+
+However, this scenario could not be setup, because there isn't any current XMPP server implementation [2] that support PubSub chaining [3].
+
+It seems to be possible to hack ejabberd to allow remote subscriptions, but the module node_zoo mentioned in [4] is not found in the ejabberd git repository [5] nor the modules repository [6], and the code where the hack might be applied [7] has changed.
+
+[2] https://en.wikipedia.org/wiki/Comparison_of_XMPP_server_software
+[3] http://xmpp.org/extensions/xep-0253.html
+[4] https://support.process-one.net/browse/EJAB-674
+[5] https://github.com/processone/ejabberd
+[6] https://svn.process-one.net/ejabberd-modules
+[7] http://lists.jabber.ru/pipermail/ejabberd/2008-June/003913.html
+
+the current implementation
+-----------------------------
+
+Due to the previous issue subscribing ejabberd XMPP accounts to remote nodes, the current implementation uses only one XMPP server. This server have a publisher and subscriber account for each cg server. 
+
+In this way, the XMPP account sub@example1.com would be subscribed to the node "home/example1.com/pubexample2/updates" that belongs to pubexample2@example1.com and the account subexample2@example1.com would be subscribed to the node "home/example1.com/pub/updates" that belongs to pub@example1.com.
+
+When a user A in cg.example1.com publish a post, cg would use the XMPP account pub@example1.com to publish the item to the node "home/example1.com/pub/updates" that would be received by subexample2@example1.com. The cg server cg.example2.com would receive this item and update its database using the same user id and page id. 
+Therefore, if the user A has id 1 in the database, and the post belongs to the discussion page with id 2 in cg.example1.com, it would appear in cg.example2.com in a discussion page with the same id and published by a user in cg.example2.com with id 1. 
+This is the reason why for this scenario cg.example1.com and cg.example2.com should have the same users and pages ids.
+
+
+
+Installation
+==============
+
+
+Configure the XMPP server: ejabberd
+-------------------------------------
+
+Add the host domain, a user admin for that domain and enable pubsub
+
+<code>
+...
+%% Admin user
+{acl, admin, {user, "admin", "example1.com"}}.
+
+%% Hostname
+{hosts, ["example1.com"]}.
+...
+%% Everybody can create pubsub nodes
+{access, pubsub_createnode, [{allow, all}]}.
+...
+  {mod_pubsub,   [ % requires mod_caps
+                  {access_createnode, pubsub_createnode},
+                  {pep_sendlast_offline, false},
+                  {last_item_cache, false},
+                  %%{plugins, ["default", "pep"]}
+                  {plugins, ["flat", "hometree", "pep"]}  % pep requires mod_caps
+
+</code>
+
+
+Create the XMPP accounts
+----------------------------
+
+<code>
+sudo ejabberdctl register admin example1.com admin
+
+sudo ejabberdctl register sub example1.com sub
+sudo ejabberdctl register pub example1.com pub
+
+sudo ejabberdctl register subexample2 example1.com subexample2
+sudo ejabberdctl register pubexample2 example1.com pubexample2
+
+sudo ejabberdctl registered_users example1.com
+</code>
+
+Configure cg
+--------------
+
+<code>
+gem install xmpp4r
+
+cp config/xmpppubsub.yml.example config/xmpppubsub.yml
+vim config/xmpppubsub.yml
+</code>
+
+h3. in the server cg.example1.com
+
+<code>
+:subscriber:
+  :host: example1.com
+  :port: 5222
+  :username: sub
+  :password: sub
+  :debug: true
+  :publishernode: home/example1.com/pubexample2/updates
+
+:publisher:
+  :host: example1.com
+  :port: 5222
+  :username: pub
+  :password: pub
+  :debug: true
+  :updatesnode: home/example1.com/pub/updates
+
+</code>
+
+h3. in the server cg.example2.com
+
+<code>
+:subscriber:
+  :host: example1.com
+  :port: 5222
+  :username: subexample2
+  :password: subexample2
+  :debug: true
+  :publishernode: home/example1.com/pub/updates
+
+:publisher:
+  :host: example1.com
+  :port: 5222
+  :username: pubexample2
+  :password: pubexample2
+  :debug: true
+  :updatesnode: home/example1.com/pubexample2/updates
+
+</code>
+
+Create the PubSub nodes and subscriptions
+------------------------------------------
+
+In both cg servers run
+
+<code>
+rake initialize_publisher
+</code>
+
+Then run
+
+<code>
+rake initialize_subscriber
+</code>
+
+Run the cg server and task
+-----------------------------
+
+In both servers run in separate shells
+
+<code>
+script/server 
+</code>
+and
+<code>
+rake pubsub_updates
+</code>
+
+Create cg users and discussion pages
+--------------------------------------
+
+Create the users and discussion pages with the same name, and to have the same id, you would need a new cg installation or copy the database.
+
+http://cg.example1.com:3000/account/new
+http://cg.example1.com:3000/pages/new/me/discussion
+
+http://cg.example2.com:3000/account/new
+http://cg.example2.com:3000/pages/new/me/discussion
+
+Create a post and check the federation
+----------------------------------------
+
+Create a post in cg.example1.com:3000/myuser/mypage and refresh cg.example2.com to see the post.
+
+
+The code
+===========
+
+lib/xmpppubsub/xmpp_pubsub
+-----------------------------
+The module Xmpppubsub contains the basic methods to manage XMPP communication.
+It's based on https://github.com/pangdudu/slac/blob/master/lib/slacmessenger.rb. Other rail software using pubsub with xmpp4r:
+* https://github.com/seanohalpin/smqueue/blob/master/lib/smqueue/adapters/xmpp_pub_sub.rb
+* https://github.com/rikas/c3s/blob/master/lib/pubsub/subscriber.rb
+
+app/models/discussion/post.rb
+------------------------------
+
+The method after_create is modified to publish the post to the XMPP server.
+The method publish connects the publisher account to the XMPP server and publish the item
+
+lib/tasks/pubsub_updates.rb
+-----------------------------
+
+This task connects the subscriber account to the XMPP server and get the updates from the node that is subscribed to. It runs infinetely. It should be a daemon instead.
+
+lib/tasks/initialize_subscriber.rb
+------------------------------------
+
+Connect the subscriber account to the XMPP server and subscribes it to the publisher node
+
+lib/tasks/initialize_publisher.rb
+------------------------------------
+
+Connect the publisher account to the XMPP server and creates the node
+
+config/xmpppubsub.yml.example
+------------------------------------
+
+The configuration to connect to the XMPP server, contains the publisher and subscriber names, passwords, XMPP server and node names.
+
+config/initializers/xmpppubsub.rb
+------------------------------------
+
+Load the xmpppubsub library.
