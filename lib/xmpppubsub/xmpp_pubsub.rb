@@ -38,6 +38,16 @@ module Xmpppubsub
       @pubsub = PubSub::ServiceHelper.new(@client, @pubsubservice)
     end
 
+    #register client at server
+    def register
+      @client.connect(@host, @port)
+      @client.register(@password, {'nick'=>@username,'name'=>@username})
+    end
+
+    ############################################################################
+    # subscriber methods
+    ############################################################################
+
     def subscribe2node node
       begin
         # subscribe to the node
@@ -63,7 +73,10 @@ module Xmpppubsub
           items.each do |item|
             @log.debug "#{@username} - Node event item: #{item}"
 
-            remote_post = Post.new
+            # to avoid this item being published too, set remote flag to true
+            remote_post = Post.new({:remote => true})
+            @log.debug "remote: #{remote_post.remote}"
+            # the post has to be created first in order to set attributes from xml
             remote_post.from_xml(item.elements.first.to_s)
             @log.debug "post: #{remote_post}"
             remote_post.save!
@@ -75,11 +88,28 @@ module Xmpppubsub
       @log.debug "item outside loop #{item}"
     end
 
-    #register client at server
-    def register
-      @client.connect(@host, @port)
-      @client.register(@password, {'nick'=>@username,'name'=>@username})
+    #subscriber subscriptions
+    def getsubscriptions
+      @subscriptions = @pubsub.get_subscriptions_from_all_nodes()
+      @log.debug "#{@username} - subscriptions: #{@subscriptions}"
     end
+    
+    #subscriber items
+    def getitems node
+      #TODO: node should be optional
+      @log.debug "#{node}"
+      @items = @pubsub.get_items_from(node)
+      @log.debug "#{node} node items: #{@items}\n"
+    end
+    
+#    def getsubscriptions node
+#      @subscriptions = @pubsub.get_subscriptions_from(node)
+#      @log.debug "#{node} node subscriptions: #{@subscriptions}\n"
+#    end
+
+    ############################################################################
+    # publisher methods
+    ############################################################################
 
     #create our basic nodes
     def createbasicnodes
@@ -126,20 +156,6 @@ module Xmpppubsub
       @log.debug "#{@username} - Published to node #{node} the item: #{item}"
       @pubsub.publish_item_to(node, item)
     end
-
-    #subscriber subscriptions
-    def getsubscriptions
-      @subscriptions = @pubsub.get_subscriptions_from_all_nodes()
-      @log.debug "#{@username} - subscriptions: #{@subscriptions}"
-    end
-    
-    #subscriber items
-    def getitems node
-      #TODO: node should be optional
-      @log.debug "#{node}"
-      @items = @pubsub.get_items_from(node)
-      @log.debug "#{node} node items: #{@items}\n"
-    end
     
     #publisher nodes
     def getnodes node
@@ -152,11 +168,6 @@ module Xmpppubsub
       @subscribers = @pubsub.get_subscribers_from(node)
       @log.debug "#{node} node subscribers: #{@subscribers}\n"
     end
-    
-#    def getsubscriptions node
-#      @subscriptions = @pubsub.get_subscriptions_from(node)
-#      @log.debug "#{node} node subscriptions: #{@subscriptions}\n"
-#    end
     
     def updatesnode
       @updatesnode

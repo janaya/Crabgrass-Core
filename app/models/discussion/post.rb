@@ -48,7 +48,8 @@ class Post < ActiveRecord::Base
 
   attr_accessor :recipient      # for private posts, a tmp var to store who
                                 # this post is being sent to. used by activities.
-
+  attr_accessor :remote # to don't publish again remote posts
+  
   ##
   ## METHODS
   ##
@@ -85,6 +86,7 @@ class Post < ActiveRecord::Base
   #   Post.create! @page, current_user, params[:post]
   #
   def self.create!(*args, &block)
+    remote = false
     user = nil
     page = nil
     discussion = nil
@@ -168,7 +170,10 @@ class Post < ActiveRecord::Base
 
   def post_created
     discussion.post_created(self)
-    publish
+    # to avoid a remote post being published again
+    if !remote
+      publish
+    end
   end
 
   def post_destroyed(force_decrement=false)
@@ -197,7 +202,6 @@ class Post < ActiveRecord::Base
     # not needed, just to see
     #@xmpppubsub.getsubscriptions 
 
-    #@xmpppubsub.publish2node 'home/cairo.philosophyoftheweb.net/pub/updates', "<post>blah</post>" #@post.to_xml
     @xmpppubsub.publish XMPP[:publisher][:updatesnode], self.to_xml(:skip_instruct => true)
   end
 
