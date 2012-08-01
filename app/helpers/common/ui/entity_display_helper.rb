@@ -155,7 +155,7 @@ module Common::Ui::EntityDisplayHelper
     # label
 
     display, title = if entity.nil?
-      [:unknown.t, nil]
+      [:anonymous.t, nil]
     elsif options[:label]
       [options[:label], nil]
     elsif format == :short
@@ -289,5 +289,18 @@ module Common::Ui::EntityDisplayHelper
       content_tag(:b, $2)
     end
   end
+
+  def author_selection_tag(element_id, context)
+    if current_user.may_act_as?(:user => 0, :context => context)
+      options = options_for_select([[current_user.name, current_user.id], [:anonymous.t,0]])
+      select_tag('author_selector', options, :onchange => "$('#{element_id}').value=this.value;")
+    else
+      author_style = "background-image: url(#{avatar_url_for(current_user,'small')})"
+      content_tag(:div, :class => 'author', :style => author_style) do
+        content_tag(:div, :class => 'username') do
+          display_entity(current_user)
+        end
+      end
+    end
 
 end

@@ -302,6 +302,39 @@ class User < ActiveRecord::Base
     end
   end
 
+  #
+  # may this user act as another user, or even another group?
+  #
+  # In other words, may this user be 'anonymous' or take on the identity
+  # of someone else when creating posts or edits?
+  #
+  # supported options:
+  #
+  # :user -- may self act as this user?
+  # (if :user => 0, this means anonymous)
+  #
+  # :group -- may self act as this group?
+  #
+  # :context -- what entity is the context for this request.
+  # the context determines what is possible.
+  #
+  def may_act_as?(options={})
+    user, group, context = options[:user], options[:group], options[:context]
+    if context.is_a? Group
+      if user.to_s == "0"
+        context.access?(self => :post_anonymously)
+      elsif user && user.id == self.id
+        true
+      end
+    elsif context.is_a? Network
+      if self.member_of?(group) && group.member_of?(context)
+        true
+      end
+    else
+      false # only group and network context anonymous posts are currently supported
+    end
+  end
+
   ##
   ## DEPRECATED
   ##
